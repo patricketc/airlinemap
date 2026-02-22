@@ -631,6 +631,7 @@
             zoom: 1
         };
         let currentTheme = 'dark';
+        let cachedWorld = null;
 
         function toggleAccordion(header) {
             const section = header.closest('.accordion-section');
@@ -638,98 +639,204 @@
         }
 
         function exportMap() {
-            const svgElement = document.getElementById('map');
-            const bgColor = document.getElementById('bgColor').value;
+            if (!cachedWorld) {
+                alert('Map data not yet loaded. Please wait a moment and try again.');
+                return;
+            }
+
+            const bgColor        = document.getElementById('bgColor').value;
+            const waterColor     = document.getElementById('waterColor').value;
+            const landColor      = document.getElementById('landColor').value;
+            const borderColor    = document.getElementById('borderColor').value;
             const graticuleColor = document.getElementById('graticuleColor').value;
-            const borderColor = document.getElementById('borderColor').value;
+            const showBorder     = document.getElementById('showBorder').checked;
+            const showGraticule  = document.getElementById('showGraticule').checked;
+            const showLabels     = document.getElementById('showLabels').checked;
+            const labelSize      = parseInt(document.getElementById('labelSize').value);
+            const labelPosition  = document.getElementById('labelPosition').value;
+            const projType       = document.getElementById('projection').value;
 
-            // Clone the SVG to avoid modifying the original
-            const clonedSvg = svgElement.cloneNode(true);
+            const svgEl    = document.getElementById('map');
+            const mapW     = svgEl.clientWidth;
+            const mapH     = svgEl.clientHeight || 788;
+            const scale    = 2; // 2× for crisp output
 
-            // Embed CSS into the SVG so it renders correctly as a standalone image.
-            // The HTML <style> block is not available inside an SVG blob, so any
-            // class-based rules (fill:none, stroke widths, label styling, etc.) must
-            // be re-declared here. D3 inline styles (fill colors on sphere/land, stroke
-            // colors/widths on routes) are already preserved by cloneNode(true).
-            const waterColor = document.getElementById('waterColor').value;
-            const landColor = document.getElementById('landColor').value;
-
-            const styleEl = document.createElementNS('http://www.w3.org/2000/svg', 'style');
-            // XMLSerializer does not reliably round-trip CSSOM inline styles (fill in
-            // particular) for SVG elements embedded in an HTML document.  Rather than
-            // relying on cloneNode preserving D3's .style("fill", …) calls, we embed
-            // every base-map color explicitly here so the standalone SVG blob is
-            // fully self-contained.
-            styleEl.textContent = `
-                .sphere  { fill: ${waterColor}; stroke: none; }
-                .land    { fill: ${landColor};  stroke: #334155; stroke-width: 0.5; }
-                .graticule { fill: none; stroke: ${graticuleColor}; stroke-width: 0.5; }
-                .sphere-border { fill: none; stroke: ${borderColor}; stroke-width: 2; }
-                .path  { fill: none; stroke-linecap: round; }
-                .ring  { fill: none; }
-                .airport { stroke: #fff; stroke-width: 2; }
-                .airport-label {
-                    fill: #e2e8f0;
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-                    font-weight: 600;
-                    stroke: #0f172a;
-                    stroke-width: 3;
-                    paint-order: stroke fill;
-                }
-            `;
-            // Insert style first, then background rect behind all content
-            clonedSvg.insertBefore(styleEl, clonedSvg.firstChild);
-            const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-            bgRect.setAttribute('width', '100%');
-            bgRect.setAttribute('height', '100%');
-            bgRect.setAttribute('fill', bgColor);
-            clonedSvg.insertBefore(bgRect, styleEl.nextSibling);
-
-            // Set SVG namespace
-            clonedSvg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-            clonedSvg.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
-            
-            const svgData = new XMLSerializer().serializeToString(clonedSvg);
-            
-            // Create a canvas with the same dimensions
-            const canvas = document.createElement('canvas');
-            const scale = 2; // 2x resolution for crisp PowerPoint images
-            canvas.width = svgElement.clientWidth * scale;
-            canvas.height = svgElement.clientHeight * scale;
-            
-            const ctx = canvas.getContext('2d');
+            const canvas   = document.createElement('canvas');
+            canvas.width   = mapW * scale;
+            canvas.height  = mapH * scale;
+            const ctx      = canvas.getContext('2d');
             ctx.scale(scale, scale);
-            
-            // Create image from SVG
-            const img = new Image();
-            const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-            const url = URL.createObjectURL(svgBlob);
-            
-            img.onload = function() {
-                // Fill background first
-                ctx.fillStyle = bgColor;
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                
-                ctx.drawImage(img, 0, 0);
-                URL.revokeObjectURL(url);
-                
-                // Convert to PNG and download
-                canvas.toBlob(function(blob) {
-                    const link = document.createElement('a');
-                    link.download = 'route-map.png';
-                    link.href = URL.createObjectURL(blob);
-                    link.click();
-                    URL.revokeObjectURL(link.href);
-                }, 'image/png');
-            };
-            
-            img.onerror = function() {
-                console.error('Error loading SVG for export');
-                URL.revokeObjectURL(url);
-                alert('Export failed. Try again or use a screenshot instead.');
-            };
-            
-            img.src = url;
+
+            // D3 canvas path generator — reuses the current live projection so the
+            // exported image exactly matches what the user sees on screen.
+            const cp = d3.geoPath().projection(projection).context(ctx);
+
+            // ── Background ──────────────────────────────────────────────────────
+            ctx.fillStyle = bgColor;
+            ctx.fillRect(0, 0, mapW, mapH);
+
+            // ── Base map ─────────────────────────────────────────────────────────
+            ctx.beginPath(); cp({ type: 'Sphere' });
+            ctx.fillStyle = waterColor; ctx.fill();
+
+            if (showGraticule) {
+                ctx.beginPath(); cp(d3.geoGraticule()());
+                ctx.strokeStyle = graticuleColor; ctx.lineWidth = 0.5;
+                ctx.setLineDash([]); ctx.stroke();
+            }
+
+            ctx.beginPath();
+            cp(topojson.feature(cachedWorld, cachedWorld.objects.countries));
+            ctx.fillStyle = landColor; ctx.fill();
+            ctx.strokeStyle = '#334155'; ctx.lineWidth = 0.5;
+            ctx.setLineDash([]); ctx.stroke();
+
+            if (showBorder) {
+                ctx.beginPath(); cp({ type: 'Sphere' });
+                ctx.strokeStyle = borderColor; ctx.lineWidth = 2;
+                ctx.setLineDash([]); ctx.stroke();
+            }
+
+            // ── Routes & rings ────────────────────────────────────────────────────
+            drawnRoutes.forEach(({ routes, rings, style }) => {
+                const lw   = parseFloat(style.lineWidth);
+                const dash = style.lineStyle === 'dashed' ? [lw * 4, lw * 2]
+                           : style.lineStyle === 'dotted' ? [lw * 0.5, lw * 1.5]
+                           : [];
+                ctx.strokeStyle = style.lineColor;
+                ctx.lineWidth   = lw;
+                ctx.lineCap     = 'round';
+                ctx.setLineDash(dash);
+
+                routes.forEach(airportList => {
+                    for (let i = 0; i < airportList.length - 1; i++) {
+                        const interp = d3.geoInterpolate(
+                            [airportList[i].lon,     airportList[i].lat],
+                            [airportList[i+1].lon,   airportList[i+1].lat]
+                        );
+                        ctx.beginPath();
+                        cp({ type: 'LineString', coordinates: d3.range(0, 1.01, 0.01).map(interp) });
+                        ctx.stroke();
+                    }
+                });
+
+                rings.forEach(ring => {
+                    const pts = [];
+                    for (let i = 0; i <= 360; i++) {
+                        const a   = i * 2 * Math.PI / 360;
+                        const φ1  = ring.airport.lat * Math.PI / 180;
+                        const λ1  = ring.airport.lon * Math.PI / 180;
+                        const ad  = ring.distanceMeters / 6371000;
+                        const φ2  = Math.asin(Math.sin(φ1)*Math.cos(ad) + Math.cos(φ1)*Math.sin(ad)*Math.cos(a));
+                        const λ2  = λ1 + Math.atan2(Math.sin(a)*Math.sin(ad)*Math.cos(φ1),
+                                                     Math.cos(ad) - Math.sin(φ1)*Math.sin(φ2));
+                        pts.push([λ2 * 180/Math.PI, φ2 * 180/Math.PI]);
+                    }
+                    ctx.beginPath();
+                    cp({ type: 'LineString', coordinates: pts });
+                    ctx.stroke();
+                });
+            });
+
+            // ── Markers ───────────────────────────────────────────────────────────
+            drawnRoutes.forEach(({ routes, points, rings, style }) => {
+                if (!style.showMarkers) return;
+                const all = new Set();
+                routes.forEach(r => r.forEach(a => all.add(a)));
+                points.forEach(a => all.add(a));
+                rings.forEach(r => all.add(r.airport));
+
+                ctx.setLineDash([]); ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
+
+                all.forEach(airport => {
+                    const c = projection([airport.lon, airport.lat]);
+                    if (!c || isNaN(c[0]) || isNaN(c[1])) return;
+                    if (projType === 'orthographic' || projType === 'stereographic' || projType === 'gnomonic') {
+                        const dist = d3.geoDistance([airport.lon, airport.lat], projection.invert(projection.translate()));
+                        if (dist > (projection.clipAngle ? projection.clipAngle() : 90) * Math.PI / 180) return;
+                    }
+                    const s = style.markerSize;
+                    ctx.fillStyle = style.markerColor;
+                    ctx.beginPath();
+                    if (style.markerShape === 'circle') {
+                        ctx.arc(c[0], c[1], s, 0, Math.PI * 2);
+                    } else if (style.markerShape === 'square') {
+                        const h = s * 1.5; ctx.rect(c[0]-h, c[1]-h, h*2, h*2);
+                    } else if (style.markerShape === 'diamond') {
+                        const h = s * 1.8;
+                        ctx.moveTo(c[0], c[1]-h); ctx.lineTo(c[0]+h, c[1]);
+                        ctx.lineTo(c[0], c[1]+h); ctx.lineTo(c[0]-h, c[1]); ctx.closePath();
+                    } else if (style.markerShape === 'triangle') {
+                        const h = s * 1.8;
+                        ctx.moveTo(c[0], c[1]-h); ctx.lineTo(c[0]+h, c[1]+h);
+                        ctx.lineTo(c[0]-h, c[1]+h); ctx.closePath();
+                    }
+                    ctx.fill(); ctx.stroke();
+                });
+            });
+
+            // ── Labels ────────────────────────────────────────────────────────────
+            if (showLabels) {
+                ctx.font = `600 ${labelSize}px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+                ctx.setLineDash([]);
+
+                drawnRoutes.forEach(({ routes, points, rings, style }) => {
+                    const all = new Set();
+                    routes.forEach(r => r.forEach(a => all.add(a)));
+                    points.forEach(a => all.add(a));
+                    rings.forEach(r => all.add(r.airport));
+
+                    all.forEach(airport => {
+                        const c = projection([airport.lon, airport.lat]);
+                        if (!c || isNaN(c[0]) || isNaN(c[1])) return;
+                        if (projType === 'orthographic' || projType === 'stereographic' || projType === 'gnomonic') {
+                            const dist = d3.geoDistance([airport.lon, airport.lat], projection.invert(projection.translate()));
+                            if (dist > (projection.clipAngle ? projection.clipAngle() : 90) * Math.PI / 180) return;
+                        }
+                        const s   = style.markerSize;
+                        const off = labelOffsets[airport.code] || { x: 0, y: 0 };
+                        const gap = 8;
+                        let x, y;
+
+                        ctx.save();
+                        ctx.textAlign    = 'center';
+                        ctx.textBaseline = 'alphabetic';
+
+                        if (labelOffsets[airport.code]) {
+                            x = c[0] + off.x;
+                            y = c[1] - gap - s + off.y;
+                        } else {
+                            switch (labelPosition) {
+                                case 'top':    x = c[0];       y = c[1] - gap - s; break;
+                                case 'bottom': x = c[0];       y = c[1] + gap + s;
+                                               ctx.textBaseline = 'hanging'; break;
+                                case 'left':   x = c[0]-gap-s; y = c[1];
+                                               ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; break;
+                                case 'right':  x = c[0]+gap+s; y = c[1];
+                                               ctx.textAlign = 'left';  ctx.textBaseline = 'middle'; break;
+                                case 'center': x = c[0];       y = c[1];
+                                               ctx.textBaseline = 'middle'; break;
+                            }
+                        }
+
+                        const text = getLabelText(airport);
+                        ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 3;
+                        ctx.strokeText(text, x, y);
+                        ctx.fillStyle = '#e2e8f0';
+                        ctx.fillText(text, x, y);
+                        ctx.restore();
+                    });
+                });
+            }
+
+            // ── Download ──────────────────────────────────────────────────────────
+            canvas.toBlob(blob => {
+                const link = document.createElement('a');
+                link.download = 'route-map.png';
+                link.href = URL.createObjectURL(blob);
+                link.click();
+                URL.revokeObjectURL(link.href);
+            }, 'image/png');
         }
 
         function applyTheme() {
@@ -1214,6 +1321,7 @@
         function loadWorldMap() {
             d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json')
                 .then(world => {
+                    cachedWorld = world;
                     g.selectAll("*").remove();
 
                     // Always draw sphere fill (ocean/water) regardless of border setting
