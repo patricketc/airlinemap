@@ -640,52 +640,43 @@
         function exportMap() {
             const svgElement = document.getElementById('map');
             const bgColor = document.getElementById('bgColor').value;
-            
+            const graticuleColor = document.getElementById('graticuleColor').value;
+            const borderColor = document.getElementById('borderColor').value;
+
             // Clone the SVG to avoid modifying the original
             const clonedSvg = svgElement.cloneNode(true);
-            
-            // Get computed styles and inline them for all elements
-            const originalElements = svgElement.querySelectorAll('*');
-            const clonedElements = clonedSvg.querySelectorAll('*');
-            
-            // Add background rect as first element
+
+            // Embed CSS into the SVG so it renders correctly as a standalone image.
+            // The HTML <style> block is not available inside an SVG blob, so any
+            // class-based rules (fill:none, stroke widths, label styling, etc.) must
+            // be re-declared here. D3 inline styles (fill colors on sphere/land, stroke
+            // colors/widths on routes) are already preserved by cloneNode(true).
+            const styleEl = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+            styleEl.textContent = `
+                .graticule { fill: none; stroke: ${graticuleColor}; stroke-width: 0.5; }
+                .sphere-border { fill: none; }
+                .path { fill: none; stroke-linecap: round; }
+                .ring { fill: none; }
+                .land { stroke: #334155; stroke-width: 0.5; }
+                .airport { stroke: #fff; stroke-width: 2; }
+                .airport-label {
+                    fill: #e2e8f0;
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                    font-weight: 600;
+                    stroke: #0f172a;
+                    stroke-width: 3;
+                    paint-order: stroke fill;
+                }
+            `;
+            // Insert style first, then background rect behind all content
+            clonedSvg.insertBefore(styleEl, clonedSvg.firstChild);
             const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
             bgRect.setAttribute('width', '100%');
             bgRect.setAttribute('height', '100%');
             bgRect.setAttribute('fill', bgColor);
-            clonedSvg.insertBefore(bgRect, clonedSvg.firstChild);
-            
-            // Inline all computed styles
-            originalElements.forEach((orig, i) => {
-                const cloned = clonedElements[i];
-                if (!cloned) return;
-                
-                const computedStyle = window.getComputedStyle(orig);
-                
-                // Copy important SVG styles
-                const stylesToCopy = [
-                    'fill', 'stroke', 'stroke-width', 'stroke-dasharray', 
-                    'stroke-linecap', 'opacity', 'font-size', 'font-family', 
-                    'font-weight', 'text-anchor', 'dominant-baseline'
-                ];
-                
-                stylesToCopy.forEach(styleName => {
-                    const value = computedStyle.getPropertyValue(styleName);
-                    if (value && value !== 'none' && value !== '') {
-                        cloned.style[styleName] = value;
-                    }
-                });
-                
-                // Handle text-shadow for labels (convert to stroke for SVG)
-                if (orig.classList.contains('airport-label')) {
-                    cloned.setAttribute('fill', computedStyle.fill || '#e2e8f0');
-                    cloned.setAttribute('stroke', '#0f172a');
-                    cloned.setAttribute('stroke-width', '3');
-                    cloned.setAttribute('paint-order', 'stroke fill');
-                }
-            });
-            
-            // Set SVG namespace and dimensions
+            clonedSvg.insertBefore(bgRect, styleEl.nextSibling);
+
+            // Set SVG namespace
             clonedSvg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
             clonedSvg.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
             
