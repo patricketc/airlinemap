@@ -651,13 +651,22 @@
             // class-based rules (fill:none, stroke widths, label styling, etc.) must
             // be re-declared here. D3 inline styles (fill colors on sphere/land, stroke
             // colors/widths on routes) are already preserved by cloneNode(true).
+            const waterColor = document.getElementById('waterColor').value;
+            const landColor = document.getElementById('landColor').value;
+
             const styleEl = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+            // XMLSerializer does not reliably round-trip CSSOM inline styles (fill in
+            // particular) for SVG elements embedded in an HTML document.  Rather than
+            // relying on cloneNode preserving D3's .style("fill", …) calls, we embed
+            // every base-map color explicitly here so the standalone SVG blob is
+            // fully self-contained.
             styleEl.textContent = `
+                .sphere  { fill: ${waterColor}; stroke: none; }
+                .land    { fill: ${landColor};  stroke: #334155; stroke-width: 0.5; }
                 .graticule { fill: none; stroke: ${graticuleColor}; stroke-width: 0.5; }
-                .sphere-border { fill: none; }
-                .path { fill: none; stroke-linecap: round; }
-                .ring { fill: none; }
-                .land { stroke: #334155; stroke-width: 0.5; }
+                .sphere-border { fill: none; stroke: ${borderColor}; stroke-width: 2; }
+                .path  { fill: none; stroke-linecap: round; }
+                .ring  { fill: none; }
                 .airport { stroke: #fff; stroke-width: 2; }
                 .airport-label {
                     fill: #e2e8f0;
