@@ -7,11 +7,46 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/d3-geo-projection@4"></script>
-    <script type="module">
-        import airportData from 'https://cdn.jsdelivr.net/npm/airport-data@1.0.1/+esm';
-        window.loadedAirportData = airportData;
-        window.airportDataReady = true;
-        window.dispatchEvent(new CustomEvent('airportDataLoaded'));
+    <script>
+        (function() {
+            fetch('https://raw.githubusercontent.com/mborsetti/airportsdata/main/airportsdata/airports.csv')
+                .then(response => response.text())
+                .then(csv => {
+                    const lines = csv.split('\n');
+                    const header = lines[0].replace(/"/g, '').split(',');
+                    const data = [];
+                    for (let i = 1; i < lines.length; i++) {
+                        const line = lines[i].trim();
+                        if (!line) continue;
+                        // Parse CSV respecting quoted fields
+                        const values = [];
+                        let current = '';
+                        let inQuotes = false;
+                        for (let j = 0; j < line.length; j++) {
+                            const ch = line[j];
+                            if (ch === '"') {
+                                inQuotes = !inQuotes;
+                            } else if (ch === ',' && !inQuotes) {
+                                values.push(current);
+                                current = '';
+                            } else {
+                                current += ch;
+                            }
+                        }
+                        values.push(current);
+                        const entry = {};
+                        header.forEach((key, idx) => { entry[key] = values[idx] || ''; });
+                        data.push(entry);
+                    }
+                    window.loadedAirportData = data;
+                    window.airportDataReady = true;
+                    window.dispatchEvent(new CustomEvent('airportDataLoaded'));
+                })
+                .catch(err => {
+                    console.error('Failed to load airport database:', err);
+                    document.getElementById('route-info').textContent = 'Failed to load airport database.';
+                });
+        })();
     </script>
     <style>
         * {
@@ -732,38 +767,34 @@
         function loadAirportDatabase() {
             if (window.loadedAirportData) {
                 const rawData = window.loadedAirportData;
-                
-                if (Array.isArray(rawData)) {
-                    airports = rawData
-                        .filter(airport => airport.iata && airport.latitude && airport.longitude)
-                        .map(airport => ({
-                            code: airport.iata,
-                            name: airport.name || airport.iata,
-                            city: airport.city || '',
-                            country: airport.country || '',
-                            lat: parseFloat(airport.latitude),
-                            lon: parseFloat(airport.longitude)
-                        }))
-                        .filter(a => a.code && !isNaN(a.lat) && !isNaN(a.lon));
-                } else if (typeof rawData === 'object') {
-                    airports = Object.entries(rawData)
-                        .filter(([code, airport]) => code && airport.latitude && airport.longitude)
-                        .map(([code, airport]) => ({
-                            code: code,
-                            name: airport.name || code,
-                            city: airport.city || '',
-                            country: airport.country || '',
-                            lat: parseFloat(airport.latitude),
-                            lon: parseFloat(airport.longitude)
-                        }))
-                        .filter(a => a.code && !isNaN(a.lat) && !isNaN(a.lon));
-                }
-                
+
+                airports = rawData
+                    .filter(airport => airport.lat && airport.lon)
+                    .map(airport => ({
+                        code: airport.iata || airport.icao,
+                        iata: airport.iata || '',
+                        icao: airport.icao || '',
+                        name: airport.name || airport.icao || '',
+                        city: airport.city || '',
+                        country: airport.country || '',
+                        lat: parseFloat(airport.lat),
+                        lon: parseFloat(airport.lon)
+                    }))
+                    .filter(a => a.code && !isNaN(a.lat) && !isNaN(a.lon));
+
                 console.log(`✈️ Successfully loaded ${airports.length} airports`);
                 document.getElementById('route-info').textContent = 'Add routes to view information';
                 initMap();
                 addRouteEntry();
             }
+        }
+
+        function findAirport(code) {
+            code = code.toUpperCase();
+            // Try IATA first (3-letter), then ICAO (4-letter), then fallback to code field
+            return airports.find(a => a.iata === code) ||
+                   airports.find(a => a.icao === code) ||
+                   airports.find(a => a.code === code);
         }
 
         window.addEventListener('airportDataLoaded', loadAirportDatabase);
@@ -1612,13 +1643,13 @@
             
             for (let item of items) {
                 // Check if it's a ring (format: distance@airport)
-                const ringMatch = item.match(/^(\d+(?:\.\d+)?)(nm|mi|km)\s*@\s*([A-Z]{3})$/i);
+                const ringMatch = item.match(/^(\d+(?:\.\d+)?)(nm|mi|km)\s*@\s*([A-Z]{3,4})$/i);
                 if (ringMatch) {
                     const distance = parseFloat(ringMatch[1]);
                     const unit = ringMatch[2].toLowerCase();
                     const airportCode = ringMatch[3].toUpperCase();
-                    
-                    const airport = airports.find(a => a.code === airportCode);
+
+                    const airport = findAirport(airportCode);
                     if (!airport) {
                         alert(`Airport code "${airportCode}" not found.`);
                         return null;
@@ -1646,7 +1677,7 @@
                 const codes = item.toUpperCase().split('-').map(c => c.trim()).filter(c => c.length > 0);
                 
                 if (codes.length === 1) {
-                    const airport = airports.find(a => a.code === codes[0]);
+                    const airport = findAirport(codes[0]);
                     if (!airport) {
                         alert(`Airport code "${codes[0]}" not found.`);
                         return null;
@@ -1655,7 +1686,7 @@
                 } else if (codes.length >= 2) {
                     const airportList = [];
                     for (let code of codes) {
-                        const airport = airports.find(a => a.code === code);
+                        const airport = findAirport(code);
                         if (!airport) {
                             alert(`Airport code "${code}" not found.`);
                             return null;
