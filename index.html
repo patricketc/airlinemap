@@ -671,7 +671,7 @@
                 
                 stylesToCopy.forEach(styleName => {
                     const value = computedStyle.getPropertyValue(styleName);
-                    if (value && value !== 'none' && value !== '') {
+                    if (value && value !== '') {
                         cloned.style[styleName] = value;
                     }
                 });
