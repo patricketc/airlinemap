@@ -7,6 +7,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/d3-geo-projection@4"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
     <script>
         (function() {
             fetch('https://raw.githubusercontent.com/mborsetti/airportsdata/main/airportsdata/airports.csv')
@@ -478,7 +479,10 @@
                     Graticule
                 </label>
             </div>
-            <div class="quick-control-item" style="margin-left: auto;">
+            <div class="quick-control-item" style="margin-left: auto; display: flex; gap: 8px;">
+                <button id="shareBtn" onclick="shareMap()" style="padding: 8px 16px; font-size: 0.9em;">
+                    🔗 Share
+                </button>
                 <button onclick="exportMap()" style="padding: 8px 16px; font-size: 0.9em;">
                     📷 Export PNG
                 </button>
@@ -631,6 +635,8 @@
             zoom: 1
         };
         let currentTheme = 'dark';
+        let isRestoringState = false;
+        let pendingAfterMapLoad = null;
 
         function toggleAccordion(header) {
             const section = header.closest('.accordion-section');
@@ -732,6 +738,256 @@
             img.src = url;
         }
 
+        function collectState() {
+            const state = {};
+
+            // View state
+            const proj = document.getElementById('projection').value;
+            if (proj !== 'orthographic') state.p = proj;
+
+            const zoom = Math.round(currentZoom * 100) / 100;
+            if (zoom !== 1) state.z = zoom;
+
+            const rot = projection ? projection.rotate() : savedViewState.rotation;
+            if (rot[0] !== 0 || rot[1] !== 0 || rot[2] !== 0) {
+                state.r = rot.map(v => Math.round(v * 100) / 100);
+            }
+
+            const trans = projection ? projection.translate() : savedViewState.translate;
+            if (trans && (Math.abs(trans[0] - width / 2) > 1 || Math.abs(trans[1] - height / 2) > 1)) {
+                state.t = [
+                    Math.round((trans[0] - width / 2) / width * 10000) / 10000,
+                    Math.round((trans[1] - height / 2) / height * 10000) / 10000
+                ];
+            }
+
+            // Theme & colors
+            const theme = document.getElementById('theme').value;
+            if (theme !== 'dark') state.th = theme;
+
+            if (theme === 'custom') {
+                state.c = {
+                    bg: document.getElementById('bgColor').value.substring(1),
+                    w: document.getElementById('waterColor').value.substring(1),
+                    l: document.getElementById('landColor').value.substring(1),
+                    g: document.getElementById('graticuleColor').value.substring(1),
+                    b: document.getElementById('borderColor').value.substring(1)
+                };
+            }
+
+            // Toggles (only store if different from default true)
+            if (!document.getElementById('showBorder').checked) state.sb = 0;
+            if (!document.getElementById('showGraticule').checked) state.sg = 0;
+            if (!document.getElementById('showLabels').checked) state.sl = 0;
+
+            // Label settings
+            const lt = document.getElementById('labelType').value;
+            if (lt !== 'code') state.lt = lt;
+            const lp = document.getElementById('labelPosition').value;
+            if (lp !== 'top') state.lp = lp;
+            const ls = parseInt(document.getElementById('labelSize').value);
+            if (ls !== 12) state.ls = ls;
+
+            // Label offsets
+            if (Object.keys(labelOffsets).length > 0) {
+                state.lo = {};
+                for (const [code, offset] of Object.entries(labelOffsets)) {
+                    state.lo[code] = [Math.round(offset.x), Math.round(offset.y)];
+                }
+            }
+
+            // Route entries in DOM order
+            const entries = document.querySelectorAll('.route-entry');
+            const routeArray = [];
+            entries.forEach(entry => {
+                const id = entry.id.split('-')[2];
+                const input = document.getElementById(`route-input-${id}`).value;
+                if (!input.trim()) return;
+
+                const re = {};
+                re.i = input.trim();
+                re.lc = document.getElementById(`line-color-${id}`).value.substring(1);
+                re.mc = document.getElementById(`marker-color-${id}`).value.substring(1);
+
+                const lw = parseFloat(document.getElementById(`line-width-${id}`).value);
+                if (lw !== 2.5) re.lw = lw;
+                const ly = document.getElementById(`line-style-${id}`).value;
+                if (ly !== 'solid') re.ly = ly;
+                const ms = parseFloat(document.getElementById(`marker-size-${id}`).value);
+                if (ms !== 6) re.ms = ms;
+                const mh = document.getElementById(`marker-shape-${id}`).value;
+                if (mh !== 'circle') re.mh = mh;
+                if (!document.getElementById(`show-markers-${id}`).checked) re.sm = 0;
+
+                routeArray.push(re);
+            });
+
+            if (routeArray.length > 0) state.re = routeArray;
+
+            return state;
+        }
+
+        function generateShareURL() {
+            if (typeof LZString === 'undefined') {
+                alert('Sharing is temporarily unavailable. Please try refreshing the page.');
+                return null;
+            }
+
+            const state = collectState();
+            const json = JSON.stringify(state);
+            const compressed = LZString.compressToEncodedURIComponent(json);
+            return window.location.origin + window.location.pathname + '#s=' + compressed;
+        }
+
+        function shareMap() {
+            const url = generateShareURL();
+            if (!url) return;
+
+            if (url.length > 8000) {
+                alert('Warning: This map has a lot of data. The URL is ' + url.length +
+                    ' characters long. Some browsers or messaging apps may truncate it.');
+            }
+
+            const btn = document.getElementById('shareBtn');
+            navigator.clipboard.writeText(url).then(() => {
+                const originalText = btn.textContent;
+                btn.textContent = '✓ Copied!';
+                btn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.background = '';
+                }, 2000);
+            }).catch(() => {
+                prompt('Copy this URL to share your map:', url);
+            });
+        }
+
+        function getSharedStateFromURL() {
+            const hash = window.location.hash;
+            if (!hash || !hash.startsWith('#s=')) return null;
+
+            try {
+                const encoded = hash.substring(3);
+                const json = LZString.decompressFromEncodedURIComponent(encoded);
+                if (!json) return null;
+                return JSON.parse(json);
+            } catch (e) {
+                console.error('Failed to parse shared map state:', e);
+                return null;
+            }
+        }
+
+        function restoreSharedState(state) {
+            isRestoringState = true;
+
+            // Set projection
+            if (state.p) {
+                document.getElementById('projection').value = state.p;
+            }
+
+            // Set view state
+            if (state.z !== undefined) currentZoom = state.z;
+            savedViewState.rotation = state.r || [0, 0, 0];
+            if (state.t) {
+                savedViewState.translate = [
+                    state.t[0] * width + width / 2,
+                    state.t[1] * height + height / 2
+                ];
+            } else {
+                savedViewState.translate = null;
+            }
+            savedViewState.zoom = currentZoom;
+
+            // Set theme and colors
+            if (state.th) {
+                document.getElementById('theme').value = state.th;
+                currentTheme = state.th;
+            }
+
+            if (state.th === 'custom' && state.c) {
+                document.getElementById('bgColor').value = '#' + state.c.bg;
+                document.getElementById('bgColorValue').textContent = '#' + state.c.bg;
+                document.getElementById('waterColor').value = '#' + state.c.w;
+                document.getElementById('waterColorValue').textContent = '#' + state.c.w;
+                document.getElementById('landColor').value = '#' + state.c.l;
+                document.getElementById('landColorValue').textContent = '#' + state.c.l;
+                document.getElementById('graticuleColor').value = '#' + state.c.g;
+                document.getElementById('graticuleColorValue').textContent = '#' + state.c.g;
+                document.getElementById('borderColor').value = '#' + state.c.b;
+                document.getElementById('borderColorValue').textContent = '#' + state.c.b;
+                document.querySelector('.map-container').style.background = '#' + state.c.bg;
+            } else if (state.th && state.th !== 'custom') {
+                applyTheme();
+            }
+
+            // Set toggles (default is true/checked)
+            document.getElementById('showBorder').checked = state.sb !== 0;
+            document.getElementById('showGraticule').checked = state.sg !== 0;
+            document.getElementById('showLabels').checked = state.sl !== 0;
+
+            // Set label settings
+            if (state.lt) document.getElementById('labelType').value = state.lt;
+            if (state.lp) document.getElementById('labelPosition').value = state.lp;
+            if (state.ls !== undefined) {
+                document.getElementById('labelSize').value = state.ls;
+                document.getElementById('labelSizeValue').textContent = state.ls + 'px';
+            }
+
+            // Restore label offsets
+            if (state.lo) {
+                labelOffsets = {};
+                for (const [code, arr] of Object.entries(state.lo)) {
+                    labelOffsets[code] = { x: arr[0], y: arr[1] };
+                }
+            }
+
+            // Create route entries and populate them
+            let hasRoutes = false;
+            if (state.re && state.re.length > 0) {
+                state.re.forEach(re => {
+                    addRouteEntry();
+                    const id = routeEntryCount;
+
+                    document.getElementById(`route-input-${id}`).value = re.i;
+                    document.getElementById(`line-color-${id}`).value = '#' + re.lc;
+                    document.getElementById(`line-color-value-${id}`).textContent = '#' + re.lc;
+                    document.getElementById(`marker-color-${id}`).value = '#' + re.mc;
+                    document.getElementById(`marker-color-value-${id}`).textContent = '#' + re.mc;
+
+                    if (re.lw !== undefined) {
+                        document.getElementById(`line-width-${id}`).value = re.lw;
+                        document.getElementById(`line-width-value-${id}`).textContent = re.lw;
+                    }
+                    if (re.ly) document.getElementById(`line-style-${id}`).value = re.ly;
+                    if (re.ms !== undefined) {
+                        document.getElementById(`marker-size-${id}`).value = re.ms;
+                        document.getElementById(`marker-size-value-${id}`).textContent = re.ms;
+                    }
+                    if (re.mh) document.getElementById(`marker-shape-${id}`).value = re.mh;
+                    if (re.sm === 0) document.getElementById(`show-markers-${id}`).checked = false;
+
+                    const entry = document.getElementById(`route-entry-${id}`);
+                    if (entry) entry.style.borderLeftColor = '#' + re.lc;
+
+                    hasRoutes = true;
+                });
+            }
+
+            if (hasRoutes) {
+                pendingAfterMapLoad = () => {
+                    isRestoringState = false;
+                };
+                drawAllRoutes();
+            } else {
+                addRouteEntry();
+                pendingAfterMapLoad = () => {
+                    isRestoringState = false;
+                };
+                updateProjection();
+                loadWorldMap();
+            }
+        }
+
         function applyTheme() {
             const theme = document.getElementById('theme').value;
             currentTheme = theme;
@@ -785,7 +1041,13 @@
                 console.log(`✈️ Successfully loaded ${airports.length} airports`);
                 document.getElementById('route-info').textContent = 'Add routes to view information';
                 initMap();
-                addRouteEntry();
+
+                const sharedState = getSharedStateFromURL();
+                if (sharedState) {
+                    restoreSharedState(sharedState);
+                } else {
+                    addRouteEntry();
+                }
             }
         }
 
@@ -1064,12 +1326,12 @@
             const previousProjType = projection ? 
                 (projection.parallels ? 'conic' : (isPlanarProjection(projType) ? 'planar' : 'azimuthal')) : null;
             
-            if (projection) {
+            if (projection && !isRestoringState) {
                 savedViewState.rotation = projection.rotate ? projection.rotate() : [0, 0, 0];
                 savedViewState.translate = projection.translate ? projection.translate() : [width / 2, height / 2];
                 savedViewState.zoom = currentZoom;
             }
-            
+
             const isConic = projType === 'lambertConformal' || projType === 'albers';
             const isAzimuthal = !isPlanarProjection(projType) && !isConic;
             const wasPlanarProjection = previousProjType === 'planar';
@@ -1323,6 +1585,11 @@
                     
                     if (drawnRoutes.length > 0) {
                         redrawAll();
+                    }
+
+                    if (pendingAfterMapLoad) {
+                        pendingAfterMapLoad();
+                        pendingAfterMapLoad = null;
                     }
                 });
         }
@@ -1797,16 +2064,16 @@
             });
             
             if (!hasValidRoute) {
-                alert('Please enter at least one route or point.');
+                if (!isRestoringState) alert('Please enter at least one route or point.');
                 return;
             }
-            
-            if (projection) {
+
+            if (projection && !isRestoringState) {
                 savedViewState.rotation = projection.rotate ? projection.rotate() : [0, 0, 0];
                 savedViewState.translate = projection.translate ? projection.translate() : null;
                 savedViewState.zoom = currentZoom;
             }
-            
+
             updateProjection();
             loadWorldMap();
             
