@@ -486,6 +486,9 @@
                 <button onclick="exportMap()" style="padding: 8px 16px; font-size: 0.9em;">
                     📷 Export PNG
                 </button>
+                <button onclick="exportSvg()" style="padding: 8px 16px; font-size: 0.9em;">
+                    📐 Export SVG
+                </button>
             </div>
         </div>
 
@@ -643,45 +646,45 @@
             section.classList.toggle('open');
         }
 
-        function exportMap() {
+        function prepareSvgForExport() {
             const svgElement = document.getElementById('map');
             const bgColor = document.getElementById('bgColor').value;
-            
+
             // Clone the SVG to avoid modifying the original
             const clonedSvg = svgElement.cloneNode(true);
-            
+
             // Get computed styles and inline them for all elements
             const originalElements = svgElement.querySelectorAll('*');
             const clonedElements = clonedSvg.querySelectorAll('*');
-            
+
             // Add background rect as first element
             const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
             bgRect.setAttribute('width', '100%');
             bgRect.setAttribute('height', '100%');
             bgRect.setAttribute('fill', bgColor);
             clonedSvg.insertBefore(bgRect, clonedSvg.firstChild);
-            
+
             // Inline all computed styles
             originalElements.forEach((orig, i) => {
                 const cloned = clonedElements[i];
                 if (!cloned) return;
-                
+
                 const computedStyle = window.getComputedStyle(orig);
-                
+
                 // Copy important SVG styles
                 const stylesToCopy = [
-                    'fill', 'stroke', 'stroke-width', 'stroke-dasharray', 
-                    'stroke-linecap', 'opacity', 'font-size', 'font-family', 
+                    'fill', 'stroke', 'stroke-width', 'stroke-dasharray',
+                    'stroke-linecap', 'opacity', 'font-size', 'font-family',
                     'font-weight', 'text-anchor', 'dominant-baseline'
                 ];
-                
+
                 stylesToCopy.forEach(styleName => {
                     const value = computedStyle.getPropertyValue(styleName);
                     if (value && value !== '') {
                         cloned.style[styleName] = value;
                     }
                 });
-                
+
                 // Handle text-shadow for labels (convert to stroke for SVG)
                 if (orig.classList.contains('airport-label')) {
                     cloned.setAttribute('fill', computedStyle.fill || '#e2e8f0');
@@ -690,35 +693,43 @@
                     cloned.setAttribute('paint-order', 'stroke fill');
                 }
             });
-            
-            // Set SVG namespace and dimensions
+
+            // Set SVG namespace and explicit dimensions for standalone use
             clonedSvg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
             clonedSvg.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
-            
-            const svgData = new XMLSerializer().serializeToString(clonedSvg);
-            
+            clonedSvg.setAttribute('width', svgElement.clientWidth);
+            clonedSvg.setAttribute('height', svgElement.clientHeight);
+
+            return new XMLSerializer().serializeToString(clonedSvg);
+        }
+
+        function exportMap() {
+            const svgElement = document.getElementById('map');
+            const bgColor = document.getElementById('bgColor').value;
+            const svgData = prepareSvgForExport();
+
             // Create a canvas with the same dimensions
             const canvas = document.createElement('canvas');
             const scale = 2; // 2x resolution for crisp PowerPoint images
             canvas.width = svgElement.clientWidth * scale;
             canvas.height = svgElement.clientHeight * scale;
-            
+
             const ctx = canvas.getContext('2d');
             ctx.scale(scale, scale);
-            
+
             // Create image from SVG
             const img = new Image();
             const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
             const url = URL.createObjectURL(svgBlob);
-            
+
             img.onload = function() {
                 // Fill background first
                 ctx.fillStyle = bgColor;
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
-                
+
                 ctx.drawImage(img, 0, 0);
                 URL.revokeObjectURL(url);
-                
+
                 // Convert to PNG and download
                 canvas.toBlob(function(blob) {
                     const link = document.createElement('a');
@@ -728,14 +739,24 @@
                     URL.revokeObjectURL(link.href);
                 }, 'image/png');
             };
-            
+
             img.onerror = function() {
                 console.error('Error loading SVG for export');
                 URL.revokeObjectURL(url);
                 alert('Export failed. Try again or use a screenshot instead.');
             };
-            
+
             img.src = url;
+        }
+
+        function exportSvg() {
+            const svgData = prepareSvgForExport();
+            const blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+            const link = document.createElement('a');
+            link.download = 'route-map.svg';
+            link.href = URL.createObjectURL(blob);
+            link.click();
+            URL.revokeObjectURL(link.href);
         }
 
         function collectState() {
