@@ -657,7 +657,7 @@
             const projType       = document.getElementById('projection').value;
 
             const svgEl    = document.getElementById('map');
-            const mapW     = svgEl.clientWidth;
+            const mapW     = svgEl.clientWidth || window.innerWidth;
             const mapH     = svgEl.clientHeight || 788;
             const scale    = 2; // 2× for crisp output
 
@@ -667,37 +667,56 @@
             const ctx      = canvas.getContext('2d');
             ctx.scale(scale, scale);
 
-            // D3 canvas path generator — reuses the current live projection so the
-            // exported image exactly matches what the user sees on screen.
-            const cp = d3.geoPath().projection(projection).context(ctx);
+            // Use D3's SVG path string generator (the same one that powers the
+            // on-screen rendering).  We then feed those strings into Path2D so
+            // the canvas can fill and stroke them reliably — this avoids the
+            // winding / clipping bugs in D3's direct-to-canvas context renderer.
+            const svgPath = d3.geoPath(projection);
 
             // ── Background ──────────────────────────────────────────────────────
             ctx.fillStyle = bgColor;
             ctx.fillRect(0, 0, mapW, mapH);
 
-            // ── Base map ─────────────────────────────────────────────────────────
-            ctx.beginPath(); cp({ type: 'Sphere' });
-            ctx.fillStyle = waterColor; ctx.fill();
+            // ── Sphere (water) ──────────────────────────────────────────────────
+            const sphereStr = svgPath({ type: 'Sphere' });
+            if (sphereStr) {
+                const p = new Path2D(sphereStr);
+                ctx.fillStyle = waterColor;
+                ctx.fill(p);
+            }
 
+            // ── Graticule ───────────────────────────────────────────────────────
             if (showGraticule) {
-                ctx.beginPath(); cp(d3.geoGraticule()());
-                ctx.strokeStyle = graticuleColor; ctx.lineWidth = 0.5;
-                ctx.setLineDash([]); ctx.stroke();
+                const gratStr = svgPath(d3.geoGraticule()());
+                if (gratStr) {
+                    ctx.strokeStyle = graticuleColor;
+                    ctx.lineWidth = 0.5;
+                    ctx.setLineDash([]);
+                    ctx.stroke(new Path2D(gratStr));
+                }
             }
 
-            ctx.beginPath();
-            cp(topojson.feature(cachedWorld, cachedWorld.objects.countries));
-            ctx.fillStyle = landColor; ctx.fill();
-            ctx.strokeStyle = '#334155'; ctx.lineWidth = 0.5;
-            ctx.setLineDash([]); ctx.stroke();
-
-            if (showBorder) {
-                ctx.beginPath(); cp({ type: 'Sphere' });
-                ctx.strokeStyle = borderColor; ctx.lineWidth = 2;
-                ctx.setLineDash([]); ctx.stroke();
+            // ── Land ────────────────────────────────────────────────────────────
+            const landStr = svgPath(topojson.feature(cachedWorld, cachedWorld.objects.countries));
+            if (landStr) {
+                const p = new Path2D(landStr);
+                ctx.fillStyle = landColor;
+                ctx.fill(p);
+                ctx.strokeStyle = '#334155';
+                ctx.lineWidth = 0.5;
+                ctx.setLineDash([]);
+                ctx.stroke(p);
             }
 
-            // ── Routes & rings ────────────────────────────────────────────────────
+            // ── Sphere border ───────────────────────────────────────────────────
+            if (showBorder && sphereStr) {
+                ctx.strokeStyle = borderColor;
+                ctx.lineWidth = 2;
+                ctx.setLineDash([]);
+                ctx.stroke(new Path2D(sphereStr));
+            }
+
+            // ── Routes & rings ──────────────────────────────────────────────────
             drawnRoutes.forEach(({ routes, rings, style }) => {
                 const lw   = parseFloat(style.lineWidth);
                 const dash = style.lineStyle === 'dashed' ? [lw * 4, lw * 2]
@@ -714,9 +733,11 @@
                             [airportList[i].lon,     airportList[i].lat],
                             [airportList[i+1].lon,   airportList[i+1].lat]
                         );
-                        ctx.beginPath();
-                        cp({ type: 'LineString', coordinates: d3.range(0, 1.01, 0.01).map(interp) });
-                        ctx.stroke();
+                        const s = svgPath({
+                            type: 'LineString',
+                            coordinates: d3.range(0, 1.01, 0.01).map(interp)
+                        });
+                        if (s) ctx.stroke(new Path2D(s));
                     }
                 });
 
@@ -732,13 +753,12 @@
                                                      Math.cos(ad) - Math.sin(φ1)*Math.sin(φ2));
                         pts.push([λ2 * 180/Math.PI, φ2 * 180/Math.PI]);
                     }
-                    ctx.beginPath();
-                    cp({ type: 'LineString', coordinates: pts });
-                    ctx.stroke();
+                    const s = svgPath({ type: 'LineString', coordinates: pts });
+                    if (s) ctx.stroke(new Path2D(s));
                 });
             });
 
-            // ── Markers ───────────────────────────────────────────────────────────
+            // ── Markers ─────────────────────────────────────────────────────────
             drawnRoutes.forEach(({ routes, points, rings, style }) => {
                 if (!style.showMarkers) return;
                 const all = new Set();
@@ -775,7 +795,7 @@
                 });
             });
 
-            // ── Labels ────────────────────────────────────────────────────────────
+            // ── Labels ──────────────────────────────────────────────────────────
             if (showLabels) {
                 ctx.font = `600 ${labelSize}px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
                 ctx.setLineDash([]);
@@ -829,7 +849,7 @@
                 });
             }
 
-            // ── Download ──────────────────────────────────────────────────────────
+            // ── Download ────────────────────────────────────────────────────────
             canvas.toBlob(blob => {
                 const link = document.createElement('a');
                 link.download = 'route-map.png';
