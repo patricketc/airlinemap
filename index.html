@@ -307,8 +307,22 @@
         }
         .land {
             fill: #475569;
+            stroke: none;
+        }
+        .countries {
+            fill: none;
             stroke: #334155;
             stroke-width: 0.5;
+        }
+        .states {
+            fill: none;
+            stroke: #1e293b;
+            stroke-width: 0.3;
+        }
+        .lakes {
+            fill: #1e3a5f;
+            stroke: #1e3a5f;
+            stroke-width: 0.3;
         }
         .airport {
             stroke: #fff;
@@ -548,6 +562,27 @@
                             <div class="color-input-wrapper">
                                 <input type="color" id="graticuleColor" value="#334155" onchange="updateMapColors()">
                                 <span class="color-value" id="graticuleColorValue">#334155</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="countryBorderColor">Country Borders</label>
+                            <div class="color-input-wrapper">
+                                <input type="color" id="countryBorderColor" value="#334155" onchange="updateMapColors()">
+                                <span class="color-value" id="countryBorderColorValue">#334155</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="stateBorderColor">State/Province Borders</label>
+                            <div class="color-input-wrapper">
+                                <input type="color" id="stateBorderColor" value="#1e293b" onchange="updateMapColors()">
+                                <span class="color-value" id="stateBorderColorValue">#1e293b</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="lakeColor">Lakes Color</label>
+                            <div class="color-input-wrapper">
+                                <input type="color" id="lakeColor" value="#1e3a5f" onchange="updateMapColors()">
+                                <span class="color-value" id="lakeColorValue">#1e3a5f</span>
                             </div>
                         </div>
                     </div>
@@ -835,7 +870,10 @@
                     w: document.getElementById('waterColor').value.substring(1),
                     l: document.getElementById('landColor').value.substring(1),
                     g: document.getElementById('graticuleColor').value.substring(1),
-                    b: document.getElementById('borderColor').value.substring(1)
+                    b: document.getElementById('borderColor').value.substring(1),
+                    cb: document.getElementById('countryBorderColor').value.substring(1),
+                    sb2: document.getElementById('stateBorderColor').value.substring(1),
+                    lk: document.getElementById('lakeColor').value.substring(1)
                 };
             }
 
@@ -979,6 +1017,18 @@
                 document.getElementById('graticuleColorValue').textContent = '#' + state.c.g;
                 document.getElementById('borderColor').value = '#' + state.c.b;
                 document.getElementById('borderColorValue').textContent = '#' + state.c.b;
+                if (state.c.cb) {
+                    document.getElementById('countryBorderColor').value = '#' + state.c.cb;
+                    document.getElementById('countryBorderColorValue').textContent = '#' + state.c.cb;
+                }
+                if (state.c.sb2) {
+                    document.getElementById('stateBorderColor').value = '#' + state.c.sb2;
+                    document.getElementById('stateBorderColorValue').textContent = '#' + state.c.sb2;
+                }
+                if (state.c.lk) {
+                    document.getElementById('lakeColor').value = '#' + state.c.lk;
+                    document.getElementById('lakeColorValue').textContent = '#' + state.c.lk;
+                }
                 document.querySelector('.map-container').style.background = '#' + state.c.bg;
             } else if (state.th && state.th !== 'custom') {
                 applyTheme();
@@ -1067,6 +1117,12 @@
                 document.getElementById('borderColorValue').textContent = '#60a5fa';
                 document.getElementById('graticuleColor').value = '#334155';
                 document.getElementById('graticuleColorValue').textContent = '#334155';
+                document.getElementById('countryBorderColor').value = '#334155';
+                document.getElementById('countryBorderColorValue').textContent = '#334155';
+                document.getElementById('stateBorderColor').value = '#1e293b';
+                document.getElementById('stateBorderColorValue').textContent = '#1e293b';
+                document.getElementById('lakeColor').value = '#1e3a5f';
+                document.getElementById('lakeColorValue').textContent = '#1e3a5f';
             } else if (theme === 'light') {
                 document.getElementById('bgColor').value = '#ffffff';
                 document.getElementById('bgColorValue').textContent = '#ffffff';
@@ -1078,6 +1134,12 @@
                 document.getElementById('borderColorValue').textContent = '#3b82f6';
                 document.getElementById('graticuleColor').value = '#cbd5e1';
                 document.getElementById('graticuleColorValue').textContent = '#cbd5e1';
+                document.getElementById('countryBorderColor').value = '#94a3b8';
+                document.getElementById('countryBorderColorValue').textContent = '#94a3b8';
+                document.getElementById('stateBorderColor').value = '#cbd5e1';
+                document.getElementById('stateBorderColorValue').textContent = '#cbd5e1';
+                document.getElementById('lakeColor').value = '#e0f2fe';
+                document.getElementById('lakeColorValue').textContent = '#e0f2fe';
             }
             // For 'custom', don't change anything - let user manually adjust
             
@@ -1151,6 +1213,18 @@
         });
         document.getElementById('graticuleColor').addEventListener('input', (e) => {
             document.getElementById('graticuleColorValue').textContent = e.target.value;
+            document.getElementById('theme').value = 'custom';
+        });
+        document.getElementById('countryBorderColor').addEventListener('input', (e) => {
+            document.getElementById('countryBorderColorValue').textContent = e.target.value;
+            document.getElementById('theme').value = 'custom';
+        });
+        document.getElementById('stateBorderColor').addEventListener('input', (e) => {
+            document.getElementById('stateBorderColorValue').textContent = e.target.value;
+            document.getElementById('theme').value = 'custom';
+        });
+        document.getElementById('lakeColor').addEventListener('input', (e) => {
+            document.getElementById('lakeColorValue').textContent = e.target.value;
             document.getElementById('theme').value = 'custom';
         });
         document.getElementById('labelSize').addEventListener('input', (e) => {
@@ -1538,8 +1612,12 @@
         }
 
         function loadWorldMap() {
-            d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json')
-                .then(world => {
+            Promise.all([
+                d3.json('ne_50m_land.json'),
+                d3.json('ne_50m_admin_0_countries.json'),
+                d3.json('ne_50m_admin_1_states_provinces.json'),
+                d3.json('ne_50m_lakes.json')
+            ]).then(([land, countries, states, lakes]) => {
                     g.selectAll("*").remove();
 
                     // Always draw sphere fill (ocean/water) regardless of border setting
@@ -1550,7 +1628,7 @@
                         .style("fill", document.getElementById('waterColor').value);
 
                     const showGraticule = document.getElementById('showGraticule').checked;
-                    
+
                     if (showGraticule) {
                         g.append("path")
                             .datum(d3.geoGraticule())
@@ -1559,11 +1637,33 @@
                             .style("stroke", document.getElementById('graticuleColor').value);
                     }
 
+                    // Land fill
                     g.append("path")
-                        .datum(topojson.feature(world, world.objects.countries))
+                        .datum(topojson.feature(land, land.objects.ne_50m_land))
                         .attr("class", "land")
                         .attr("d", path)
                         .style("fill", document.getElementById('landColor').value);
+
+                    // Country borders
+                    g.append("path")
+                        .datum(topojson.mesh(countries, countries.objects.ne_50m_admin_0_countries, (a, b) => a !== b))
+                        .attr("class", "countries")
+                        .attr("d", path)
+                        .style("stroke", document.getElementById('countryBorderColor').value);
+
+                    // State/province borders
+                    g.append("path")
+                        .datum(topojson.mesh(states, states.objects.ne_50m_admin_1_states_provinces, (a, b) => a !== b))
+                        .attr("class", "states")
+                        .attr("d", path)
+                        .style("stroke", document.getElementById('stateBorderColor').value);
+
+                    // Lakes
+                    g.append("path")
+                        .datum(topojson.feature(lakes, lakes.objects.ne_50m_lakes))
+                        .attr("class", "lakes")
+                        .attr("d", path)
+                        .style("fill", document.getElementById('lakeColor').value);
 
                     // Draw sphere border on top only if enabled
                     const showBorder = document.getElementById('showBorder').checked;
@@ -2083,12 +2183,18 @@
             const landColor = document.getElementById('landColor').value;
             const borderColor = document.getElementById('borderColor').value;
             const graticuleColor = document.getElementById('graticuleColor').value;
-            
+            const countryBorderColor = document.getElementById('countryBorderColor').value;
+            const stateBorderColor = document.getElementById('stateBorderColor').value;
+            const lakeColor = document.getElementById('lakeColor').value;
+
             document.querySelector('.map-container').style.background = bgColor;
             g.selectAll('.sphere').style('fill', waterColor);
             g.selectAll('.land').style('fill', landColor);
             g.selectAll('.sphere-border').style('stroke', borderColor);
             g.selectAll('.graticule').style('stroke', graticuleColor);
+            g.selectAll('.countries').style('stroke', countryBorderColor);
+            g.selectAll('.states').style('stroke', stateBorderColor);
+            g.selectAll('.lakes').style('fill', lakeColor);
         }
 
         function drawAllRoutes() {
