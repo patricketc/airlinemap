@@ -368,37 +368,55 @@
         }
         .quick-control-item {
             display: flex;
-            flex-direction: column;
-            gap: 4px;
+            align-items: center;
+            gap: 5px;
         }
         .quick-control-item label {
-            font-size: 0.75em;
+            font-size: 0.8em;
             color: #94a3b8;
             margin-bottom: 0;
+            white-space: nowrap;
         }
         .quick-control-item select {
-            padding: 6px 10px;
+            padding: 4px 8px;
             font-size: 0.85em;
-            min-width: 140px;
+            min-width: unset;
         }
         .quick-control-item.checkbox-item {
-            flex-direction: row;
-            align-items: center;
-            padding: 6px 10px;
-            min-height: 36px;
-            background: #0f172a;
-            border-radius: 5px;
+            gap: 5px;
         }
         .quick-control-item.checkbox-item label {
             display: flex;
             align-items: center;
-            gap: 6px;
-            font-size: 0.9em;
+            gap: 4px;
+            font-size: 0.85em;
             color: #e2e8f0;
             cursor: pointer;
         }
         .quick-control-item.checkbox-item input[type="checkbox"] {
             width: auto;
+        }
+        .quick-actions {
+            display: flex;
+            gap: 4px;
+            margin-left: auto;
+        }
+        .quick-actions button {
+            background: transparent;
+            border: 1px solid #334155;
+            color: #94a3b8;
+            padding: 4px 10px;
+            font-size: 0.8em;
+            font-weight: 500;
+            box-shadow: none;
+            border-radius: 5px;
+        }
+        .quick-actions button:hover {
+            background: rgba(96, 165, 250, 0.1);
+            border-color: #60a5fa;
+            color: #e2e8f0;
+            box-shadow: none;
+            transform: none;
         }
         /* Accordion Styles */
         .accordion-section {
@@ -488,11 +506,11 @@
                 padding: 8px 10px;
             }
             .quick-controls {
-                gap: 8px;
-                padding: 6px 10px;
+                gap: 6px;
+                padding: 6px 8px;
             }
-            .quick-control-item select {
-                min-width: 120px;
+            .quick-actions {
+                margin-left: 0;
             }
             .style-grid {
                 grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
@@ -540,19 +558,14 @@
                 padding: 8px;
             }
             .quick-controls {
-                flex-direction: column;
-                align-items: stretch;
+                flex-wrap: wrap;
                 gap: 6px;
                 padding: 6px;
                 border-radius: 6px;
             }
-            .quick-control-item select {
-                min-width: unset;
+            .quick-actions {
+                margin-left: 0;
                 width: 100%;
-            }
-            .quick-control-item:last-child {
-                margin-left: 0 !important;
-                flex-wrap: wrap;
             }
             .style-grid {
                 grid-template-columns: repeat(2, 1fr);
@@ -630,16 +643,10 @@
                     Graticule
                 </label>
             </div>
-            <div class="quick-control-item" style="margin-left: auto; display: flex; gap: 8px;">
-                <button id="shareBtn" onclick="shareMap()" style="padding: 8px 16px; font-size: 0.9em;">
-                    🔗 Share
-                </button>
-                <button onclick="exportMap()" style="padding: 8px 16px; font-size: 0.9em;">
-                    📷 Export PNG
-                </button>
-                <button onclick="exportSVG()" style="padding: 8px 16px; font-size: 0.9em;">
-                    🖼️ Export SVG
-                </button>
+            <div class="quick-actions">
+                <button id="shareBtn" onclick="shareMap()">🔗 Share</button>
+                <button onclick="exportMap()">PNG</button>
+                <button onclick="exportSVG()">SVG</button>
             </div>
         </div>
 
