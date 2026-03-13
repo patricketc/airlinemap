@@ -59,7 +59,7 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             background: #0f172a;
             color: #e2e8f0;
-            padding: 20px;
+            padding: 12px;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
         }
@@ -69,22 +69,22 @@
         }
         h1 {
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 8px;
             color: #60a5fa;
-            font-size: 2em;
+            font-size: 1.6em;
         }
         .controls {
             background: #1e293b;
-            padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 15px;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 8px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.3);
         }
         .route-entry {
             background: #1e293b;
-            padding: 16px;
-            border-radius: 8px;
-            margin-bottom: 12px;
+            padding: 10px 12px;
+            border-radius: 6px;
+            margin-bottom: 6px;
             border-left: 4px solid #60a5fa;
             transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
             position: relative;
@@ -124,7 +124,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
+            margin-bottom: 8px;
         }
         .route-number {
             font-weight: 600;
@@ -135,24 +135,24 @@
             background: #ef4444;
             color: white;
             border: none;
-            padding: 8px 16px;
-            border-radius: 6px;
+            padding: 5px 12px;
+            border-radius: 5px;
             cursor: pointer;
-            font-size: 0.85em;
+            font-size: 0.8em;
             transition: all 0.3s;
         }
         .remove-route:hover {
             background: #dc2626;
         }
         .input-wrapper {
-            margin-bottom: 15px;
+            margin-bottom: 8px;
         }
         label {
             display: block;
-            margin-bottom: 8px;
+            margin-bottom: 3px;
             font-weight: 500;
             color: #94a3b8;
-            font-size: 0.9em;
+            font-size: 0.85em;
         }
         .helper-text {
             font-size: 0.8em;
@@ -161,12 +161,12 @@
         }
         input, select {
             width: 100%;
-            padding: 12px;
+            padding: 8px 10px;
             background: #1e293b;
-            border: 2px solid #334155;
-            border-radius: 8px;
+            border: 1.5px solid #334155;
+            border-radius: 6px;
             color: #e2e8f0;
-            font-size: 1em;
+            font-size: 0.92em;
             transition: all 0.3s;
         }
         input:focus, select:focus {
@@ -177,8 +177,8 @@
         .style-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 12px;
-            margin-top: 10px;
+            gap: 8px;
+            margin-top: 6px;
         }
         .style-item {
             display: flex;
@@ -206,20 +206,20 @@
         }
         .button-group {
             display: flex;
-            gap: 10px;
-            margin-top: 20px;
+            gap: 8px;
+            margin-top: 10px;
         }
         button {
-            padding: 12px 30px;
+            padding: 8px 18px;
             background: linear-gradient(135deg, #3b82f6, #2563eb);
             color: white;
             border: none;
-            border-radius: 8px;
-            font-size: 1em;
+            border-radius: 6px;
+            font-size: 0.9em;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
-            box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3);
+            box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
         }
         button:hover {
             box-shadow: 0 6px 12px rgba(59, 130, 246, 0.4);
@@ -243,10 +243,10 @@
         }
         .map-container {
             background: #1e293b;
-            border-radius: 12px;
-            padding: 15px;
+            border-radius: 10px;
+            padding: 6px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-            margin-bottom: 15px;
+            margin-bottom: 8px;
             overflow: hidden;
         }
         #map {
@@ -257,24 +257,24 @@
         }
         .info-panel {
             background: #1e293b;
-            padding: 20px;
-            border-radius: 12px;
+            padding: 12px;
+            border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.3);
         }
         .route-list {
-            margin-top: 15px;
+            margin-top: 8px;
         }
         .route-item {
             background: #0f172a;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 6px;
             border-left: 4px solid #60a5fa;
         }
         .route-item-header {
             font-weight: 600;
             color: #60a5fa;
-            margin-bottom: 8px;
+            margin-bottom: 4px;
         }
         .distance-display {
             display: grid;
@@ -345,26 +345,26 @@
         }
         .global-settings {
             background: #0f172a;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 10px;
         }
         .settings-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 15px;
+            gap: 10px;
         }
         /* Quick Controls Bar */
         .quick-controls {
             display: flex;
             flex-wrap: wrap;
-            gap: 15px;
+            gap: 10px;
             background: #1e293b;
-            padding: 15px 20px;
-            border-radius: 12px;
-            margin-bottom: 15px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
             align-items: center;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
         .quick-control-item {
             display: flex;
@@ -377,17 +377,17 @@
             margin-bottom: 0;
         }
         .quick-control-item select {
-            padding: 8px 12px;
-            font-size: 0.9em;
-            min-width: 160px;
+            padding: 6px 10px;
+            font-size: 0.85em;
+            min-width: 140px;
         }
         .quick-control-item.checkbox-item {
             flex-direction: row;
             align-items: center;
-            padding: 8px 12px;
-            min-height: 44px;
+            padding: 6px 10px;
+            min-height: 36px;
             background: #0f172a;
-            border-radius: 6px;
+            border-radius: 5px;
         }
         .quick-control-item.checkbox-item label {
             display: flex;
@@ -403,15 +403,15 @@
         /* Accordion Styles */
         .accordion-section {
             background: #0f172a;
-            border-radius: 8px;
-            margin-bottom: 10px;
+            border-radius: 6px;
+            margin-bottom: 4px;
             overflow: hidden;
         }
         .accordion-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 15px 20px;
+            padding: 8px 12px;
             cursor: pointer;
             transition: background 0.2s;
         }
@@ -432,7 +432,7 @@
             transform: rotate(-90deg);
         }
         .accordion-content {
-            padding: 0 20px 20px 20px;
+            padding: 0 12px 10px 12px;
             display: none;
         }
         .accordion-section.open .accordion-content {
@@ -442,7 +442,7 @@
             background: transparent;
         }
         .info-panel .accordion-header {
-            padding: 0 0 15px 0;
+            padding: 0 0 8px 0;
         }
         .info-panel .accordion-content {
             padding: 0;
@@ -465,31 +465,31 @@
         /* Tablet breakpoint */
         @media (max-width: 768px) {
             body {
-                padding: 12px;
+                padding: 8px;
             }
             h1 {
-                font-size: 1.5em;
-                margin-bottom: 16px;
+                font-size: 1.35em;
+                margin-bottom: 6px;
             }
             #map {
                 height: 50vh;
                 min-height: 300px;
             }
             .map-container {
-                padding: 12px;
+                padding: 4px;
             }
             .controls {
-                padding: 16px;
+                padding: 10px;
             }
             .info-panel {
-                padding: 16px;
+                padding: 10px;
             }
             .route-entry {
-                padding: 14px;
+                padding: 8px 10px;
             }
             .quick-controls {
-                gap: 10px;
-                padding: 10px 12px;
+                gap: 8px;
+                padding: 6px 10px;
             }
             .quick-control-item select {
                 min-width: 120px;
@@ -501,10 +501,10 @@
                 grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
             }
             .accordion-header {
-                padding: 12px 14px;
+                padding: 7px 10px;
             }
             .accordion-content {
-                padding: 0 14px 14px 14px;
+                padding: 0 10px 8px 10px;
             }
             .distance-display {
                 grid-template-columns: repeat(2, 1fr);
@@ -514,37 +514,37 @@
         /* Mobile breakpoint */
         @media (max-width: 480px) {
             body {
-                padding: 8px;
+                padding: 6px;
             }
             h1 {
-                font-size: 1.25em;
-                margin-bottom: 12px;
+                font-size: 1.15em;
+                margin-bottom: 4px;
             }
             #map {
                 height: 40vh;
                 min-height: 250px;
             }
             .map-container {
-                padding: 8px;
-                border-radius: 8px;
+                padding: 3px;
+                border-radius: 6px;
             }
             .controls {
-                padding: 12px;
-                border-radius: 8px;
+                padding: 8px;
+                border-radius: 6px;
             }
             .info-panel {
-                padding: 12px;
-                border-radius: 8px;
+                padding: 8px;
+                border-radius: 6px;
             }
             .route-entry {
-                padding: 10px;
+                padding: 8px;
             }
             .quick-controls {
                 flex-direction: column;
                 align-items: stretch;
-                gap: 8px;
-                padding: 10px;
-                border-radius: 8px;
+                gap: 6px;
+                padding: 6px;
+                border-radius: 6px;
             }
             .quick-control-item select {
                 min-width: unset;
@@ -564,19 +564,19 @@
                 flex-direction: column;
             }
             button {
-                padding: 10px 16px;
+                padding: 7px 14px;
             }
             .controls, .map-container, .info-panel, .quick-controls {
-                margin-bottom: 12px;
+                margin-bottom: 6px;
             }
             .distance-display {
                 grid-template-columns: 1fr;
             }
             .route-item {
-                padding: 10px;
+                padding: 8px;
             }
             .input-wrapper {
-                margin-bottom: 10px;
+                margin-bottom: 6px;
             }
         }
     </style>
@@ -723,8 +723,8 @@
                             </div>
                         </div>
                     </div>
-                    <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #334155;">
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #334155;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
                             <div>
                                 <label>
                                     <input type="checkbox" id="showBorder" checked onchange="toggleBorder()" style="width: auto; margin-right: 8px;">
