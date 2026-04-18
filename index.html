@@ -64,7 +64,7 @@
             -moz-osx-font-smoothing: grayscale;
         }
         .container {
-            max-width: 1400px;
+            max-width: 1800px;
             margin: 0 auto;
         }
         h1 {
@@ -174,20 +174,80 @@
             border-color: #60a5fa;
             box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
         }
-        .style-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        .style-sections {
+            display: flex;
+            flex-direction: column;
             gap: 8px;
-            margin-top: 6px;
+            margin-top: 8px;
+        }
+        .style-section {
+            background: #0f172a;
+            border-radius: 6px;
+            padding: 8px 10px;
+        }
+        .style-section-label {
+            font-size: 0.7em;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #64748b;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        .style-row {
+            display: grid;
+            gap: 10px;
+            align-items: end;
+        }
+        .style-row.cols-3 {
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+        }
+        .style-row.cols-4 {
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
         }
         .style-item {
             display: flex;
             flex-direction: column;
-            gap: 5px;
+            gap: 4px;
+            min-width: 0;
         }
-        .style-item label {
-            font-size: 0.8em;
-            margin-bottom: 2px;
+        .style-item-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            font-size: 0.75em;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+        .style-item-value {
+            font-size: 0.85em;
+            color: #e2e8f0;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+        }
+        .style-item input[type="range"] {
+            width: 100%;
+            cursor: pointer;
+            padding: 0;
+        }
+        .style-item select {
+            padding: 6px 8px;
+            font-size: 0.85em;
+        }
+        .style-item.checkbox-cell {
+            justify-content: center;
+        }
+        .style-item.checkbox-cell label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85em;
+            color: #e2e8f0;
+            cursor: pointer;
+            margin: 0;
+        }
+        .style-item.checkbox-cell input[type="checkbox"] {
+            width: auto;
+            margin: 0;
         }
         .color-input-wrapper {
             display: flex;
@@ -195,14 +255,76 @@
             gap: 8px;
         }
         .color-input-wrapper input[type="color"] {
-            width: 48px;
-            height: 36px;
+            width: 44px;
+            height: 32px;
             padding: 2px;
             cursor: pointer;
+            flex-shrink: 0;
         }
         .color-value {
+            font-size: 0.8em;
+            color: #94a3b8;
+            font-variant-numeric: tabular-nums;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        /* Route entry collapse */
+        .route-collapse-btn {
+            background: transparent;
+            border: none;
+            color: #60a5fa;
+            cursor: pointer;
+            padding: 4px 6px;
+            font-size: 0.85em;
+            transition: transform 0.2s;
+            box-shadow: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+        }
+        .route-collapse-btn:hover {
+            box-shadow: none;
+            transform: none;
+            background: rgba(96, 165, 250, 0.15);
+            border-radius: 4px;
+        }
+        .route-entry.collapsed .route-collapse-btn {
+            transform: rotate(-90deg);
+        }
+        .route-entry.collapsed .route-collapse-btn:hover {
+            transform: rotate(-90deg);
+        }
+        .route-entry.collapsed .route-body {
+            display: none;
+        }
+        .route-entry.collapsed .route-header {
+            margin-bottom: 0;
+        }
+        .route-header-left {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex: 1;
+            min-width: 0;
+        }
+        .route-summary {
             font-size: 0.85em;
             color: #94a3b8;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            flex: 1;
+            min-width: 0;
+        }
+        .route-swatch {
+            display: inline-block;
+            width: 24px;
+            height: 3px;
+            border-radius: 2px;
+            vertical-align: middle;
+            flex-shrink: 0;
         }
         .button-group {
             display: flex;
@@ -251,9 +373,9 @@
         }
         #map {
             width: 100%;
-            height: 65vh;
-            min-height: 400px;
-            max-height: 788px;
+            height: 72vh;
+            min-height: 500px;
+            max-height: 1200px;
         }
         .info-panel {
             background: #1e293b;
@@ -358,9 +480,9 @@
         .quick-controls {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 6px;
             background: #1e293b;
-            padding: 8px 12px;
+            padding: 6px 8px;
             border-radius: 8px;
             margin-bottom: 8px;
             align-items: center;
@@ -368,37 +490,58 @@
         }
         .quick-control-item {
             display: flex;
-            flex-direction: column;
-            gap: 4px;
+            align-items: center;
+            gap: 8px;
+            height: 36px;
+            padding: 0 10px;
+            background: #0f172a;
+            border-radius: 6px;
         }
         .quick-control-item label {
-            font-size: 0.75em;
+            font-size: 0.8em;
             color: #94a3b8;
-            margin-bottom: 0;
+            margin: 0;
+            white-space: nowrap;
         }
         .quick-control-item select {
-            padding: 6px 10px;
+            padding: 4px 6px;
             font-size: 0.85em;
-            min-width: 140px;
+            background: transparent;
+            border: none;
+            color: #e2e8f0;
+            cursor: pointer;
+            min-width: 0;
+            width: auto;
         }
-        .quick-control-item.checkbox-item {
-            flex-direction: row;
-            align-items: center;
-            padding: 6px 10px;
-            min-height: 36px;
-            background: #0f172a;
-            border-radius: 5px;
+        .quick-control-item select:focus {
+            box-shadow: none;
         }
         .quick-control-item.checkbox-item label {
             display: flex;
             align-items: center;
             gap: 6px;
-            font-size: 0.9em;
+            font-size: 0.85em;
             color: #e2e8f0;
             cursor: pointer;
         }
         .quick-control-item.checkbox-item input[type="checkbox"] {
             width: auto;
+            margin: 0;
+        }
+        .quick-controls-spacer {
+            flex: 1 1 auto;
+        }
+        .quick-control-group {
+            display: flex;
+            gap: 6px;
+        }
+        .quick-control-group button {
+            height: 36px;
+            padding: 0 14px;
+            font-size: 0.85em;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
         }
         /* Accordion Styles */
         .accordion-section {
@@ -494,8 +637,9 @@
             .quick-control-item select {
                 min-width: 120px;
             }
-            .style-grid {
-                grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            .style-row.cols-3,
+            .style-row.cols-4 {
+                gap: 8px;
             }
             .settings-grid {
                 grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
@@ -540,22 +684,26 @@
                 padding: 8px;
             }
             .quick-controls {
-                flex-direction: column;
-                align-items: stretch;
-                gap: 6px;
+                gap: 4px;
                 padding: 6px;
                 border-radius: 6px;
             }
-            .quick-control-item select {
-                min-width: unset;
-                width: 100%;
+            .quick-controls-spacer {
+                display: none;
             }
-            .quick-control-item:last-child {
-                margin-left: 0 !important;
-                flex-wrap: wrap;
+            .quick-control-group {
+                flex: 1 1 100%;
+                justify-content: stretch;
             }
-            .style-grid {
-                grid-template-columns: repeat(2, 1fr);
+            .quick-control-group button {
+                flex: 1 1 0;
+                padding: 0 8px;
+            }
+            .style-row.cols-3 {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+            .style-row.cols-4 {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
             }
             .settings-grid {
                 grid-template-columns: 1fr;
@@ -630,16 +778,11 @@
                     Graticule
                 </label>
             </div>
-            <div class="quick-control-item" style="margin-left: auto; display: flex; gap: 8px;">
-                <button id="shareBtn" onclick="shareMap()" style="padding: 8px 16px; font-size: 0.9em;">
-                    🔗 Share
-                </button>
-                <button onclick="exportMap()" style="padding: 8px 16px; font-size: 0.9em;">
-                    📷 Export PNG
-                </button>
-                <button onclick="exportSVG()" style="padding: 8px 16px; font-size: 0.9em;">
-                    🖼️ Export SVG
-                </button>
+            <div class="quick-controls-spacer"></div>
+            <div class="quick-control-group">
+                <button id="shareBtn" onclick="shareMap()">🔗 Share</button>
+                <button onclick="exportMap()">📷 PNG</button>
+                <button onclick="exportSVG()">🖼️ SVG</button>
             </div>
         </div>
 
@@ -1219,6 +1362,9 @@
 
                     const entry = document.getElementById(`route-entry-${id}`);
                     if (entry) entry.style.borderLeftColor = '#' + re.lc;
+                    const swatch = document.getElementById(`route-swatch-${id}`);
+                    if (swatch) swatch.style.background = '#' + re.lc;
+                    updateRouteSummary(id);
 
                     hasRoutes = true;
                 });
@@ -1386,65 +1532,76 @@
             entry.style.borderLeftColor = colors[colorIndex];
             entry.innerHTML = `
                 <div class="route-header" draggable="true">
-                    <span class="route-number">Group ${id}</span>
+                    <div class="route-header-left">
+                        <button type="button" class="route-collapse-btn" aria-label="Toggle group" onclick="toggleRouteEntry(${id}, event)">▼</button>
+                        <span class="route-number">Group ${id}</span>
+                        <span class="route-swatch" id="route-swatch-${id}" style="background: ${colors[colorIndex]};"></span>
+                        <span class="route-summary" id="route-summary-${id}">empty</span>
+                    </div>
                     <button class="remove-route" onclick="removeRouteEntry(${id})">Remove</button>
                 </div>
-                <div class="input-wrapper">
-                    <label>Route, Points, or Rings</label>
-                    <input type="text" id="route-input-${id}" placeholder="e.g., JFK-LHR or LAX, JFK or 1000nm@ATL">
-                    <div class="helper-text">Routes: LAX-ATL-ORD • Points: LAX, JFK • Rings: 1000nm@ATL, 500mi@JFK • Mixed: LAX-ATL, 1000nm@ORD</div>
-                </div>
-                <div class="style-grid">
-                    <div class="style-item">
-                        <label>Line Color</label>
-                        <div class="color-input-wrapper">
-                            <input type="color" id="line-color-${id}" value="${colors[colorIndex]}" onchange="updateEntryColor(${id})">
-                            <span class="color-value" id="line-color-value-${id}">${colors[colorIndex]}</span>
+                <div class="route-body">
+                    <div class="input-wrapper">
+                        <label>Route, Points, or Rings</label>
+                        <input type="text" id="route-input-${id}" placeholder="e.g., JFK-LHR or LAX, JFK or 1000nm@ATL">
+                        <div class="helper-text">Routes: LAX-ATL-ORD • Points: LAX, JFK • Rings: 1000nm@ATL, 500mi@JFK • Mixed: LAX-ATL, 1000nm@ORD</div>
+                    </div>
+                    <div class="style-sections">
+                        <div class="style-section">
+                            <div class="style-section-label">Line</div>
+                            <div class="style-row cols-3">
+                                <div class="style-item">
+                                    <div class="style-item-label"><span>Color</span></div>
+                                    <div class="color-input-wrapper">
+                                        <input type="color" id="line-color-${id}" value="${colors[colorIndex]}" onchange="updateEntryColor(${id})">
+                                        <span class="color-value" id="line-color-value-${id}">${colors[colorIndex]}</span>
+                                    </div>
+                                </div>
+                                <div class="style-item">
+                                    <div class="style-item-label"><span>Width</span><span class="style-item-value" id="line-width-value-${id}">2.5</span></div>
+                                    <input type="range" id="line-width-${id}" min="1" max="8" value="2.5" step="0.5">
+                                </div>
+                                <div class="style-item">
+                                    <div class="style-item-label"><span>Style</span></div>
+                                    <select id="line-style-${id}">
+                                        <option value="solid">Solid</option>
+                                        <option value="dashed">Dashed</option>
+                                        <option value="dotted">Dotted</option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="style-item">
-                        <label>Line Width</label>
-                        <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
-                            <input type="range" id="line-width-${id}" min="1" max="8" value="2.5" step="0.5" style="flex: 1; cursor: pointer;">
-                            <span id="line-width-value-${id}" style="font-size: 0.9em; min-width: 35px;">2.5</span>
+                        <div class="style-section">
+                            <div class="style-section-label">Markers</div>
+                            <div class="style-row cols-4">
+                                <div class="style-item">
+                                    <div class="style-item-label"><span>Color</span></div>
+                                    <div class="color-input-wrapper">
+                                        <input type="color" id="marker-color-${id}" value="${colors[colorIndex]}" onchange="updateEntryColor(${id})">
+                                        <span class="color-value" id="marker-color-value-${id}">${colors[colorIndex]}</span>
+                                    </div>
+                                </div>
+                                <div class="style-item">
+                                    <div class="style-item-label"><span>Size</span><span class="style-item-value" id="marker-size-value-${id}">6</span></div>
+                                    <input type="range" id="marker-size-${id}" min="3" max="12" value="6" step="1">
+                                </div>
+                                <div class="style-item">
+                                    <div class="style-item-label"><span>Shape</span></div>
+                                    <select id="marker-shape-${id}">
+                                        <option value="circle">Circle</option>
+                                        <option value="square">Square</option>
+                                        <option value="diamond">Diamond</option>
+                                        <option value="triangle">Triangle</option>
+                                    </select>
+                                </div>
+                                <div class="style-item checkbox-cell">
+                                    <label>
+                                        <input type="checkbox" id="show-markers-${id}" checked>
+                                        Show
+                                    </label>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="style-item">
-                        <label>Line Style</label>
-                        <select id="line-style-${id}">
-                            <option value="solid">Solid</option>
-                            <option value="dashed">Dashed</option>
-                            <option value="dotted">Dotted</option>
-                        </select>
-                    </div>
-                    <div class="style-item">
-                        <label>Marker Color</label>
-                        <div class="color-input-wrapper">
-                            <input type="color" id="marker-color-${id}" value="${colors[colorIndex]}" onchange="updateEntryColor(${id})">
-                            <span class="color-value" id="marker-color-value-${id}">${colors[colorIndex]}</span>
-                        </div>
-                    </div>
-                    <div class="style-item">
-                        <label>Marker Size</label>
-                        <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
-                            <input type="range" id="marker-size-${id}" min="3" max="12" value="6" step="1" style="flex: 1; cursor: pointer;">
-                            <span id="marker-size-value-${id}" style="font-size: 0.9em; min-width: 35px;">6</span>
-                        </div>
-                    </div>
-                    <div class="style-item">
-                        <label>Marker Shape</label>
-                        <select id="marker-shape-${id}">
-                            <option value="circle">Circle</option>
-                            <option value="square">Square</option>
-                            <option value="diamond">Diamond</option>
-                            <option value="triangle">Triangle</option>
-                        </select>
-                    </div>
-                    <div class="style-item">
-                        <label>
-                            <input type="checkbox" id="show-markers-${id}" checked style="width: auto; margin-right: 8px;">
-                            Show Markers
-                        </label>
                     </div>
                 </div>
             `;
@@ -1461,6 +1618,7 @@
             
             document.getElementById(`line-color-${id}`).addEventListener('input', (e) => {
                 document.getElementById(`line-color-value-${id}`).textContent = e.target.value;
+                updateRouteSummary(id);
                 if (drawnRoutes.length > 0) drawAllRoutes();
             });
             document.getElementById(`marker-color-${id}`).addEventListener('input', (e) => {
@@ -1469,9 +1627,11 @@
             });
             document.getElementById(`line-width-${id}`).addEventListener('input', (e) => {
                 document.getElementById(`line-width-value-${id}`).textContent = e.target.value;
+                updateRouteSummary(id);
                 if (drawnRoutes.length > 0) drawAllRoutes();
             });
             document.getElementById(`line-style-${id}`).addEventListener('change', () => {
+                updateRouteSummary(id);
                 if (drawnRoutes.length > 0) drawAllRoutes();
             });
             document.getElementById(`marker-size-${id}`).addEventListener('input', (e) => {
@@ -1484,6 +1644,29 @@
             document.getElementById(`show-markers-${id}`).addEventListener('change', () => {
                 if (drawnRoutes.length > 0) drawAllRoutes();
             });
+            document.getElementById(`route-input-${id}`).addEventListener('input', () => {
+                updateRouteSummary(id);
+            });
+            updateRouteSummary(id);
+        }
+
+        function toggleRouteEntry(id, event) {
+            if (event) event.stopPropagation();
+            const entry = document.getElementById(`route-entry-${id}`);
+            if (entry) entry.classList.toggle('collapsed');
+        }
+
+        function updateRouteSummary(id) {
+            const summary = document.getElementById(`route-summary-${id}`);
+            if (!summary) return;
+            const input = document.getElementById(`route-input-${id}`);
+            const width = document.getElementById(`line-width-${id}`);
+            const style = document.getElementById(`line-style-${id}`);
+            const text = (input && input.value.trim()) || 'empty';
+            const styleBits = [];
+            if (width && width.value) styleBits.push(`${width.value}px`);
+            if (style && style.value) styleBits.push(style.value);
+            summary.textContent = styleBits.length ? `${text} · ${styleBits.join(' ')}` : text;
         }
 
         let draggedElement = null;
@@ -1557,6 +1740,8 @@
             if (entry) {
                 entry.style.borderLeftColor = lineColor;
             }
+            const swatch = document.getElementById(`route-swatch-${id}`);
+            if (swatch) swatch.style.background = lineColor;
         }
 
         function removeRouteEntry(id) {
